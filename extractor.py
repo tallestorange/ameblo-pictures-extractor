@@ -27,7 +27,6 @@ def get_article_urls():
         for j in soup.select(titles_css_selector):
             blog_url = j.get("href")
             yield blog_url
-            print(blog_url)
         print()
         if partial_url == max_url:
             break
