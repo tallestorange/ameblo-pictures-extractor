@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import itertools
 from urllib.parse import urlparse
 import os
+import datetime
 
 
 def get_bs4(url):
@@ -20,8 +21,6 @@ def get_article_urls():
         print(i)
         url = f"https://ameblo.jp/angerme-new/entrylist-{i}.html"
         partial_url = f"/angerme-new/entrylist-{i}.html"
-        if partial_url == max_url:
-            break
         soup = get_bs4(url)
         if i == 1:
             max_url = soup.select("#indexPagination > ul.skin-paginationNexts > li:nth-child(2) > a")[0].get("href")
@@ -29,17 +28,35 @@ def get_article_urls():
             blog_url = j.get("href")
             yield blog_url
             print(blog_url)
+        print()
+        if partial_url == max_url:
+            break
 
 
 ## 記事から画像のリンクを取得する
 def get_picture_links(article_url):
     soup = get_bs4(article_url)
+
+    raw_html = str(soup)
+
+    # 記事を書いた日を求める
+    date_published = raw_html.find("datePublished")
+    iso_datetime_string = raw_html[date_published+16:date_published+45]
+    dt = datetime.datetime.fromisoformat(iso_datetime_string)
+
+    # だれにタグ付けされているかを求める
+    theme_name = ""
+    for s in raw_html[raw_html.find("theme_name")+13:]:
+        if s == '"':
+            break
+        theme_name += s
+
     links = set()
     for i in soup.select("img"):
-        link = i.get("src")
+        link = i.get("src").replace("?caw=800", "")
         if "user_images" not in link:
             continue
-        links.add(link.replace("?caw=800", ""))
+        links.add((link, dt, theme_name))
     return links
 
 
@@ -47,7 +64,9 @@ if __name__ == "__main__":
     base_url = "https://ameblo.jp"
     for url in get_article_urls():
         article_url = base_url + url
-        for link in get_picture_links(article_url):
-            print(link)
-            output_filename = os.path.basename(urlparse(link).path)
+        for link, dt, theme_name in get_picture_links(article_url):
+            dt_str = dt.strftime("%Y%m%d%H%M%S")
+            filename = os.path.basename(urlparse(link).path)
+            print(dt_str, theme_name, link)
+            output_filename = f"{theme_name}_{dt_str}_{filename}"
             request.urlretrieve(link, output_filename)
