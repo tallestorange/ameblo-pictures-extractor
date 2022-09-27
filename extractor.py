@@ -13,13 +13,13 @@ def get_bs4(url):
 
 
 ## 記事のURL一覧を取得する
-def get_article_urls():
+def get_article_urls(blog_id):
     titles_css_selector = "#main > div.skin-blogArchive > div.skin-blogArchiveBody.skin-bgMain > ul > li > div > div:nth-child(2) > h2 > a"
     max_url = ""
     articles = []
     for i in itertools.count(1):
         print(i)
-        url = f"https://ameblo.jp/angerme-new/entrylist-{i}.html"
+        url = f"https://ameblo.jp/{blog_id}/entrylist-{i}.html"
         partial_url = f"/angerme-new/entrylist-{i}.html"
         soup = get_bs4(url)
         if i == 1:
@@ -64,14 +64,20 @@ def get_picture_links(article_url):
 
 if __name__ == "__main__":
     base_url = "https://ameblo.jp"
-    for url in get_article_urls():
-        article_url = base_url + url
-        for link, dt, theme_name in get_picture_links(article_url):
-            if dt is None:
-                dt_str = "YYYYmmddHHMMSS"
-            else:
-                dt_str = dt.strftime("%Y%m%d%H%M%S")
-            filename = os.path.basename(urlparse(link).path)
-            print(dt_str, theme_name, link)
-            output_filename = f"{theme_name}_{dt_str}_{filename}"
-            request.urlretrieve(link, output_filename)
+    blogs = [
+        "angerme-new",
+        "angerme-ss-shin",
+        "angerme-amerika"
+    ]
+    for blog in blogs:
+        for url in get_article_urls(blog):
+            article_url = base_url + url
+            for link, dt, theme_name in get_picture_links(article_url):
+                if dt is None:
+                    dt_str = "YYYYmmddHHMMSS"
+                else:
+                    dt_str = dt.strftime("%Y%m%d%H%M%S")
+                filename = os.path.basename(urlparse(link).path)
+                print(dt_str, theme_name, link)
+                output_filename = f"{theme_name}_{dt_str}_{filename}"
+                request.urlretrieve(link, output_filename)
