@@ -40,8 +40,11 @@ def get_picture_links(article_url):
 
     # 記事を書いた日を求める
     date_published = raw_html.find("datePublished")
-    iso_datetime_string = raw_html[date_published+16:date_published+45]
-    dt = datetime.datetime.fromisoformat(iso_datetime_string)
+    if date_published == -1:
+        dt = None
+    else:
+        iso_datetime_string = raw_html[date_published+16:date_published+45]
+        dt = datetime.datetime.fromisoformat(iso_datetime_string)
 
     # だれにタグ付けされているかを求める
     theme_name = ""
@@ -64,7 +67,10 @@ if __name__ == "__main__":
     for url in get_article_urls():
         article_url = base_url + url
         for link, dt, theme_name in get_picture_links(article_url):
-            dt_str = dt.strftime("%Y%m%d%H%M%S")
+            if dt is None:
+                dt_str = "YYYYmmddHHMMSS"
+            else:
+                dt_str = dt.strftime("%Y%m%d%H%M%S")
             filename = os.path.basename(urlparse(link).path)
             print(dt_str, theme_name, link)
             output_filename = f"{theme_name}_{dt_str}_{filename}"
